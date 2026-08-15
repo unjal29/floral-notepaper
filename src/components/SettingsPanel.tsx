@@ -33,8 +33,6 @@ import {
   type EditorVariant,
 } from "./Ankyu/editor-settings";
 
-const HARMONY_FONT_LICENSE_URL = new URL("../assets/fonts/LICENSE_Fonts", import.meta.url).href;
-
 interface SettingsPanelProps {
   config: AppConfig;
   onChange: (config: AppConfig) => void;
@@ -574,20 +572,9 @@ export function SettingsPanel({ config, onChange, onMigrateDataDir, onClose }: S
 
         <section className="pt-2 border-t border-paper-deep/25">
           <p className="text-[10px] leading-relaxed text-ink-ghost/75">
-            <span>
-              {t("settings.fontNotice", {
-                defaultValue:
-                  "Uses HarmonyOS Sans SC font. Copyright 2021 Huawei Device Co., Ltd. Licensed under HarmonyOS Sans Fonts License Agreement.",
-              })}
-            </span>{" "}
-            <a
-              href={HARMONY_FONT_LICENSE_URL}
-              target="_blank"
-              rel="noreferrer"
-              className="underline underline-offset-2 hover:text-ink-faint"
-            >
-              HarmonyOS Sans Fonts License Agreement
-            </a>
+            {t("settings.fontNotice", {
+              defaultValue: "Uses LXGW975 Yuan SC as the default sans-serif font.",
+            })}
           </p>
         </section>
       </div>
