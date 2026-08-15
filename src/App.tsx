@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import "./App.css";
 import { ContextMenuProvider } from "./components/ContextMenu";
 import { MainWindow } from "./components/MainWindow";
@@ -12,11 +12,29 @@ import type { AppConfig, ThemeOption } from "./features/settings/types";
 import { getInitialRoute } from "./features/windows/windowRoutes";
 import { syncLanguage } from "./locales";
 import { listen } from "@tauri-apps/api/event";
-import { MarkdownEditor } from "./components/editor/MarkdownEditor";
+import { MarkdownEditor } from "./components/Ankyu/editor";
+import {
+  EDITOR_SETTINGS_EVENT,
+  getEditorSettings,
+  type EditorVariant,
+  type EditorSettings,
+} from "./components/Ankyu/editor-settings";
 
 function App() {
   const route = getInitialRoute();
   const activeView = route.view;
+  const [editorVariant, setEditorVariant] = useState<EditorVariant>(
+    () => getEditorSettings().editorVariant,
+  );
+
+  useEffect(() => {
+    const onEditorSettingsChange = (event: Event) => {
+      const detail = (event as CustomEvent<EditorSettings>).detail;
+      if (detail?.editorVariant) setEditorVariant(detail.editorVariant);
+    };
+    window.addEventListener(EDITOR_SETTINGS_EVENT, onEditorSettingsChange);
+    return () => window.removeEventListener(EDITOR_SETTINGS_EVENT, onEditorSettingsChange);
+  }, []);
 
   useEffect(() => {
     let cleanup = () => {};
@@ -87,7 +105,11 @@ function App() {
         ) : activeView === "notepad" ? (
           <NotePad initialNoteId={route.noteId} />
         ) : activeView === "editor" ? (
-          <MarkdownEditor />
+          editorVariant === "original" ? (
+            <MainWindow />
+          ) : (
+            <MarkdownEditor />
+          )
         ) : (
           <TileShowcase noteId={route.noteId} />
         )}

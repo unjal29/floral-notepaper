@@ -21,6 +21,16 @@ import { DEFAULT_TILE_COLOR, normalizeTileColor } from "../features/settings/til
 import { applyTheme, watchSystemTheme } from "../features/settings/theme";
 import { LOCALE_OPTIONS } from "../locales/locale-whitelist";
 import { SlidingButtonGroup } from "./SlidingButtonGroup";
+import {
+  EDITOR_SETTINGS_EVENT,
+  getEditorSettings,
+  saveEditorSettings,
+  type EditorComponentId,
+  type EditorLayoutMode,
+  type EditorPreviewMode,
+  type EditorSettings,
+  type EditorVariant,
+} from "./Ankyu/editor-settings";
 
 const HARMONY_FONT_LICENSE_URL = new URL("../assets/fonts/LICENSE_Fonts", import.meta.url).href;
 
@@ -33,8 +43,26 @@ interface SettingsPanelProps {
 
 export function SettingsPanel({ config, onChange, onMigrateDataDir, onClose }: SettingsPanelProps) {
   const { t } = useTranslation();
+  const [editorSettings, setEditorSettings] = useState<EditorSettings>(getEditorSettings);
   const setConfigValue = <Key extends keyof AppConfig>(key: Key, value: AppConfig[Key]) => {
     onChange({ ...config, [key]: value });
+  };
+  useEffect(() => {
+    const onEditorSettingsChange = (event: Event) => {
+      const detail = (event as CustomEvent<EditorSettings>).detail;
+      if (detail) setEditorSettings(detail);
+    };
+    window.addEventListener(EDITOR_SETTINGS_EVENT, onEditorSettingsChange);
+    return () => window.removeEventListener(EDITOR_SETTINGS_EVENT, onEditorSettingsChange);
+  }, []);
+  const updateEditorSettings = (patch: Partial<EditorSettings>) => {
+    const next: EditorSettings = {
+      ...editorSettings,
+      ...patch,
+      components: { ...editorSettings.components, ...patch.components },
+    };
+    setEditorSettings(next);
+    saveEditorSettings(next);
   };
   const tileColorModes = useMemo<Array<{ value: TileColorMode; label: string }>>(
     () => [
@@ -71,6 +99,49 @@ export function SettingsPanel({ config, onChange, onMigrateDataDir, onClose }: S
     ],
     [t],
   );
+  const editorPreviewModes = useMemo<Array<{ value: EditorPreviewMode; label: string }>>(
+    () => [
+      {
+        value: "ankyu",
+        label: t("settings.editor.preview.ankyu", { defaultValue: "Ankyu 即写即预览" }),
+      },
+      {
+        value: "dual",
+        label: t("settings.editor.preview.dual", { defaultValue: "原版双列" }),
+      },
+    ],
+    [t],
+  );
+  const editorVariants = useMemo<Array<{ value: EditorVariant; label: string }>>(
+    () => [
+      {
+        value: "ankyu",
+        label: t("settings.editor.variant.ankyu", { defaultValue: "Ankyu 编辑器（推荐）" }),
+      },
+      {
+        value: "original",
+        label: t("settings.editor.variant.original", { defaultValue: "原版编辑器" }),
+      },
+    ],
+    [t],
+  );
+  const editorLayouts = useMemo<Array<{ value: EditorLayoutMode; label: string }>>(
+    () => [
+      {
+        value: "split",
+        label: t("settings.editor.layout.split", { defaultValue: "左右各一列" }),
+      },
+      {
+        value: "left2",
+        label: t("settings.editor.layout.left2", { defaultValue: "左侧两列" }),
+      },
+      {
+        value: "right2",
+        label: t("settings.editor.layout.right2", { defaultValue: "右侧两列" }),
+      },
+    ],
+    [t],
+  );
   const backgroundFits = useMemo<Array<{ value: BackgroundFit; label: string }>>(
     () => [
       { value: "cover", label: t("settings.background.fit.cover", { defaultValue: "填充" }) },
@@ -89,7 +160,7 @@ export function SettingsPanel({ config, onChange, onMigrateDataDir, onClose }: S
   );
 
   return (
-    <aside className="w-[360px] h-full shrink-0 border-l border-paper-deep/30 bg-cloud/92 backdrop-blur-sm flex flex-col">
+    <aside className="w-[360px] h-full shrink-0 border-l border-paper-deep/30 bg-cloud/92 backdrop-blur-sm flex flex-col ankyu-settings-panel">
       <div className="flex items-center justify-between h-11 px-4 border-b border-paper-deep/25">
         <h2 className="text-[13px] font-display font-medium text-ink-soft">
           {t("settings.title", { defaultValue: "应用设置" })}
@@ -455,6 +526,45 @@ export function SettingsPanel({ config, onChange, onMigrateDataDir, onClose }: S
             value={config.defaultViewMode}
             onChange={(v) => setConfigValue("defaultViewMode", v)}
           />
+        </section>
+
+        <section className="space-y-2">
+          <label className="block text-[11px] font-body text-ink-faint">Ankyu 编辑器</label>
+          <SlidingButtonGroup
+            options={editorVariants}
+            value={editorSettings.editorVariant}
+            onChange={(value: EditorVariant) => updateEditorSettings({ editorVariant: value })}
+          />
+          <SlidingButtonGroup
+            options={editorPreviewModes}
+            value={editorSettings.previewMode}
+            onChange={(value: EditorPreviewMode) => updateEditorSettings({ previewMode: value })}
+          />
+          <SlidingButtonGroup
+            options={editorLayouts}
+            value={editorSettings.layout}
+            onChange={(value: EditorLayoutMode) => updateEditorSettings({ layout: value })}
+          />
+          <div className="space-y-1.5 pt-1">
+            <p className="text-[11px] text-ink-faint/70">侧栏组件</p>
+            {(
+              Object.entries({
+                music: "音乐",
+                frontmatter: "Frontmatter",
+                toc: "目录",
+                freeNote: "自由笔记",
+                quickTools: "快速工具",
+                files: "原文件栏",
+              }) as Array<[EditorComponentId, string]>
+            ).map(([id, label]) => (
+              <ToggleRow
+                key={id}
+                label={label}
+                checked={editorSettings.components[id]}
+                onChange={(checked) => updateEditorSettings({ components: { [id]: checked } })}
+              />
+            ))}
+          </div>
         </section>
 
         <UpdateSettingsSection mode="settingsOnly" />

@@ -1,4 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { AnkyuMusic } from "../Ankyu/AnkyuMusic";
+import {
+  EDITOR_SETTINGS_EVENT,
+  getEditorSettings,
+  saveEditorSettings,
+  type EditorComponentId,
+  type EditorLayoutMode,
+  type EditorPreviewMode,
+  type EditorSettings,
+} from "../Ankyu/editor-settings";
 import { ArticlePreview } from "./ArticlePreview";
 import { BlockMarkdownEditor } from "./BlockMarkdownEditor";
 import { EditorFilePanel } from "./EditorFilePanel";
@@ -42,19 +52,11 @@ import {
 import "./editor.css";
 
 type EditorMode = "write" | "preview";
-type LayoutMode = "split" | "left2" | "right2";
-type ComponentId = "music" | "frontmatter" | "toc" | "freeNote" | "quickTools" | "files";
+type LayoutMode = EditorLayoutMode;
+type ComponentId = EditorComponentId;
 const draftKey = "floral-editor-draft-v1";
-const componentKey = "floral-editor-components-v1";
-const layoutKey = "floral-editor-layout-v1";
-const defaultComponents: Record<ComponentId, boolean> = {
-  music: true,
-  frontmatter: true,
-  toc: true,
-  freeNote: true,
-  quickTools: true,
-  files: false,
-};
+const legacyComponentKey = "floral-editor-components-v1";
+const legacyLayoutKey = "floral-editor-layout-v1";
 const componentLabels: Record<ComponentId, string> = {
   music: "Music",
   frontmatter: "Frontmatter",
@@ -64,12 +66,23 @@ const componentLabels: Record<ComponentId, string> = {
   files: "File panel",
 };
 
-function readJson<T>(key: string, fallback: T): T {
+function readInitialEditorSettings(): EditorSettings {
+  const settings = getEditorSettings();
   try {
-    const value = localStorage.getItem(key);
-    return value ? ({ ...(fallback as object), ...JSON.parse(value) } as T) : fallback;
+    const legacyLayout = localStorage.getItem(legacyLayoutKey) as LayoutMode | null;
+    const legacyComponents = JSON.parse(
+      localStorage.getItem(legacyComponentKey) ?? "null",
+    ) as Partial<Record<ComponentId, boolean>> | null;
+    return {
+      ...settings,
+      layout:
+        legacyLayout === "left2" || legacyLayout === "right2" || legacyLayout === "split"
+          ? legacyLayout
+          : settings.layout,
+      components: { ...settings.components, ...legacyComponents },
+    };
   } catch {
-    return fallback;
+    return settings;
   }
 }
 function slugify(value: string): string {
@@ -138,18 +151,16 @@ export function MarkdownEditor({
   const [savedAt, setSavedAt] = useState("");
   const [error, setError] = useState("");
   const [fontFamily, setFontFamily] = useState<"sans" | "serif">("sans");
-  const [layout, setLayout] = useState<LayoutMode>(
-    () => (localStorage.getItem(layoutKey) as LayoutMode) || "split",
-  );
-  const [components, setComponents] = useState<Record<ComponentId, boolean>>(() =>
-    readJson(componentKey, defaultComponents),
-  );
+  const [editorSettings, setEditorSettings] = useState<EditorSettings>(readInitialEditorSettings);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [timer, setTimer] = useState<WritingTimerState>(createTimerState);
   const [clock, setClock] = useState(Date.now());
   const [activePath, setActivePath] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const headings = useMemo(() => extractHeadings(article.content), [article.content]);
+  const layout = editorSettings.layout;
+  const previewMode: EditorPreviewMode = editorSettings.previewMode;
+  const components = editorSettings.components;
   const words = useMemo(
     () => (article.content.trim() ? article.content.trim().split(/\s+/u).length : 0),
     [article.content],
@@ -163,11 +174,16 @@ export function MarkdownEditor({
     localStorage.setItem(draftKey, buildMarkdownDocument(article));
   }, [article]);
   useEffect(() => {
-    localStorage.setItem(componentKey, JSON.stringify(components));
-  }, [components]);
-  useEffect(() => {
-    localStorage.setItem(layoutKey, layout);
-  }, [layout]);
+    const onSettingsChange = (event: Event) => {
+      const detail = (event as CustomEvent<EditorSettings>).detail;
+      if (!detail) return;
+      setEditorSettings((current) =>
+        JSON.stringify(current) === JSON.stringify(detail) ? current : detail,
+      );
+    };
+    window.addEventListener(EDITOR_SETTINGS_EVENT, onSettingsChange);
+    return () => window.removeEventListener(EDITOR_SETTINGS_EVENT, onSettingsChange);
+  }, []);
   useEffect(() => {
     if (!timer.startedAt || timer.paused || timer.endedAt) return;
     const id = window.setInterval(() => setClock(Date.now()), 1000);
@@ -223,8 +239,17 @@ export function MarkdownEditor({
   const onHighlight = (color: string | null) => {
     if (color) onWrap(`<mark style="background:${color}">`, "</mark>");
   };
+  const updateEditorSettings = (patch: Partial<EditorSettings>) => {
+    const next: EditorSettings = {
+      ...editorSettings,
+      ...patch,
+      components: { ...editorSettings.components, ...patch.components },
+    };
+    setEditorSettings(next);
+    saveEditorSettings(next);
+  };
   const toggle = (id: ComponentId) =>
-    setComponents((current) => ({ ...current, [id]: !current[id] }));
+    updateEditorSettings({ components: { [id]: !components[id] } });
   const save = () => {
     if (!article.title.trim()) {
       setError("A title is required before saving.");
@@ -275,16 +300,7 @@ export function MarkdownEditor({
     onHandwriting: openHandwriting,
   };
   const left = [
-    components.music && (
-      <section className="editor-card music-card" key="music">
-        <div className="editor-card-heading">
-          <h3>Music</h3>
-          <span>music</span>
-        </div>
-        <div className="music-placeholder">Select a track to write with</div>
-        <div className="music-time">0:00 / 0:00</div>
-      </section>
-    ),
+    components.music && <AnkyuMusic key="music" />,
     components.frontmatter && (
       <FrontmatterSlim
         key="frontmatter"
@@ -308,6 +324,48 @@ export function MarkdownEditor({
   ].filter(Boolean);
   const leftSplit = Math.ceil(left.length / 2);
   const rightSplit = Math.ceil(right.length / 2);
+  const writingEditor = (
+    <div className="write-view">
+      <div className="editor-content-heading">
+        <h2>Body</h2>
+        <button type="button" onClick={() => setDrawerOpen((value) => !value)}>
+          {drawerOpen ? "Hide properties" : "Edit tools"}
+        </button>
+      </div>
+      {drawerOpen && (
+        <div className="editor-drawer">
+          <FrontmatterSlim
+            article={article}
+            onChange={updateArticle}
+            categories={categories}
+            suggestedTags={suggestedTags}
+          />
+          <div className="full-source">
+            <h3>Source</h3>
+            <textarea
+              value={buildMarkdownDocument(article)}
+              onChange={(event) => {
+                const parsed = parseMarkdownDocument(event.target.value);
+                if (parsed) setArticle(parsed);
+              }}
+            />
+          </div>
+        </div>
+      )}
+      <details className="writing-toolbar" open>
+        <summary>Editing tools</summary>
+        <EditorToolGrid {...tools} />
+      </details>
+      <BlockMarkdownEditor
+        content={article.content}
+        onChange={(content) => updateArticle({ content })}
+        fontFamily={fontFamily}
+        onEditorFocus={(element) => {
+          textareaRef.current = element;
+        }}
+      />
+    </div>
+  );
   return (
     <section className={`ankyuf-editor layout-${layout}`} aria-label="article editor">
       <header className="editor-navbar">
@@ -347,7 +405,9 @@ export function MarkdownEditor({
             Layout
             <select
               value={layout}
-              onChange={(event) => setLayout(event.target.value as LayoutMode)}
+              onChange={(event) =>
+                updateEditorSettings({ layout: event.target.value as LayoutMode })
+              }
             >
               <option value="split">Left + right</option>
               <option value="left2">Two columns left</option>
@@ -409,46 +469,32 @@ export function MarkdownEditor({
             {savedAt && <div className="saved-badge">{savedAt} saved</div>}
             {error && <div className="validation-message">{error}</div>}
             {mode === "write" ? (
-              <div className="write-view">
-                <div className="editor-content-heading">
-                  <h2>Body</h2>
-                  <button type="button" onClick={() => setDrawerOpen((value) => !value)}>
-                    {drawerOpen ? "Hide properties" : "Edit tools"}
-                  </button>
-                </div>
-                {drawerOpen && (
-                  <div className="editor-drawer">
-                    <FrontmatterSlim
+              previewMode === "dual" ? (
+                <div className="dual-writing-view">
+                  <div className="dual-writing-editor">{writingEditor}</div>
+                  <div className="dual-inline-preview">
+                    <ArticlePreview
                       article={article}
-                      onChange={updateArticle}
-                      categories={categories}
-                      suggestedTags={suggestedTags}
+                      words={words}
+                      minutes={minutes}
+                      config={previewConfig}
                     />
-                    <div className="full-source">
-                      <h3>Source</h3>
-                      <textarea
-                        value={buildMarkdownDocument(article)}
-                        onChange={(event) => {
-                          const parsed = parseMarkdownDocument(event.target.value);
-                          if (parsed) setArticle(parsed);
-                        }}
-                      />
-                    </div>
                   </div>
-                )}
-                <details className="writing-toolbar" open>
-                  <summary>Editing tools</summary>
-                  <EditorToolGrid {...tools} />
-                </details>
-                <BlockMarkdownEditor
-                  content={article.content}
-                  onChange={(content) => updateArticle({ content })}
-                  fontFamily={fontFamily}
-                  onEditorFocus={(element) => {
-                    textareaRef.current = element;
-                  }}
-                />
-              </div>
+                </div>
+              ) : (
+                <div className="ankyu-writing-view">
+                  {writingEditor}
+                  <div className="ankyu-inline-preview">
+                    <div className="inline-preview-label">Live preview</div>
+                    <ArticlePreview
+                      article={article}
+                      words={words}
+                      minutes={minutes}
+                      config={previewConfig}
+                    />
+                  </div>
+                </div>
+              )
             ) : (
               <div className="preview-view">
                 <ArticlePreview

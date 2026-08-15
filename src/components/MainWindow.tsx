@@ -1935,11 +1935,11 @@ export function MainWindow({
     : t("main.window.about", { defaultValue: "关于" });
 
   return (
-    <div className="w-full h-screen flex flex-col">
-      <div className="relative noise-bg bg-cloud overflow-hidden flex flex-col flex-1">
+    <div className="w-full h-screen flex flex-col ankyu-app-shell">
+      <div className="relative noise-bg bg-cloud overflow-hidden flex flex-col flex-1 ankyu-app-surface">
         <BackgroundLayer config={settingsConfig} />
         <div
-          className={`relative z-10 flex items-center justify-between h-11 bg-paper/55 backdrop-blur-[1px] border-b border-paper-deep/30 shrink-0 select-none cursor-default ${
+          className={`relative z-10 flex items-center justify-between h-11 bg-paper/55 backdrop-blur-[1px] border-b border-paper-deep/30 shrink-0 select-none cursor-default ankyu-app-navbar ${
             isMacOS ? "pl-20 pr-5" : "pl-5 pr-0"
           }`}
           onMouseDown={handleTitleBarMouseDown}
@@ -2122,7 +2122,7 @@ export function MainWindow({
 
         <div className="relative z-10 flex flex-1 min-h-0">
           <div
-            className="border-r border-paper-deep/30 bg-paper/40 shrink-0 overflow-hidden transition-[width] duration-[600ms]"
+            className="border-r border-paper-deep/30 bg-paper/40 shrink-0 overflow-hidden transition-[width] duration-[600ms] ankyu-app-sidebar"
             style={{ width: sidebarCollapsed ? 0 : sidebarWidth }}
           >
             <div className="flex flex-col h-full" style={{ width: `${sidebarWidth}px` }}>
@@ -2656,8 +2656,8 @@ export function MainWindow({
             </div>
           )}
 
-          <div className="flex-1 flex flex-col min-w-0">
-            <div className="flex items-center justify-between px-4 h-10 border-b border-paper-deep/20 shrink-0 bg-paper/20">
+          <div className="flex-1 flex flex-col min-w-0 ankyu-app-content">
+            <div className="flex items-center justify-between px-4 h-10 border-b border-paper-deep/20 shrink-0 bg-paper/20 ankyu-app-toolbar">
               <div className="flex items-center gap-1">
                 <button
                   onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
@@ -2840,7 +2840,7 @@ export function MainWindow({
 
             <div
               key={noteTransitionKey}
-              className="animate-note-enter px-6 pt-4 pb-2 shrink-0 border-b border-paper-deep/15"
+              className="animate-note-enter px-6 pt-4 pb-2 shrink-0 border-b border-paper-deep/15 ankyu-app-note-header"
             >
               <input
                 type="text"
@@ -2893,7 +2893,7 @@ export function MainWindow({
             <div
               key={viewMode}
               ref={splitContainerRef}
-              className="flex-1 flex min-h-0 animate-view-fade"
+              className="flex-1 flex min-h-0 animate-view-fade ankyu-app-editor-surface"
             >
               {!selectedId && !isLoading ? (
                 <div className="flex-1 flex items-center justify-center text-[13px] text-ink-ghost">

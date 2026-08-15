@@ -173,6 +173,99 @@
   font-family: var(--font-mono);
   font-size: 13px;
 }
+.ankyu-music {
+  overflow: hidden;
+}
+.music-actions {
+  display: flex;
+  gap: 5px;
+}
+.music-actions button,
+.music-play {
+  border: 1px solid var(--editor-line);
+  border-radius: 999px;
+  padding: 4px 8px;
+  background: rgb(255 255 255 / 65%);
+  color: var(--editor-primary);
+  cursor: pointer;
+}
+.music-player {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 0 20px 16px;
+}
+.music-cover {
+  display: grid;
+  width: 52px;
+  height: 52px;
+  place-items: center;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #b8d790, #6ea63c);
+  background-position: center;
+  background-size: cover;
+  color: white;
+  font-size: 25px;
+}
+.music-now {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+}
+.music-now strong,
+.music-now span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.music-now strong {
+  color: #394238;
+  font-size: 13px;
+}
+.music-now span,
+.music-now small {
+  color: #8a958a;
+  font-size: 11px;
+}
+.music-now input {
+  width: 100%;
+  height: 3px;
+  accent-color: var(--editor-primary);
+}
+.music-now input:disabled {
+  opacity: 0.45;
+}
+.music-play {
+  min-width: 44px;
+  text-transform: lowercase;
+}
+.music-playlist {
+  display: grid;
+  max-height: 180px;
+  overflow: auto;
+  border-top: 1px solid var(--editor-line);
+}
+.music-playlist button {
+  display: grid;
+  gap: 2px;
+  border: 0;
+  border-bottom: 1px solid var(--editor-line);
+  padding: 8px 20px;
+  background: transparent;
+  color: #5f6a60;
+  text-align: left;
+  cursor: pointer;
+}
+.music-playlist button:hover,
+.music-playlist button.active {
+  background: var(--editor-primary-soft);
+  color: var(--editor-primary);
+}
+.music-playlist small {
+  color: #98a098;
+  font-size: 10px;
+}
 .editor-tabs {
   display: flex;
   overflow-x: auto;
@@ -568,6 +661,50 @@
 }
 .preview-view {
   padding: 24px;
+}
+.dual-writing-view {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: start;
+  gap: 18px;
+  padding: 0 18px 24px;
+}
+.dual-writing-editor,
+.dual-inline-preview {
+  min-width: 0;
+}
+.dual-writing-editor .editor-content-heading,
+.dual-writing-editor .writing-toolbar,
+.dual-writing-editor .block-markdown-editor {
+  margin-left: 0;
+  margin-right: 0;
+}
+.dual-inline-preview {
+  max-height: 75vh;
+  overflow: auto;
+  border-left: 1px solid var(--editor-line);
+  padding-left: 18px;
+}
+.dual-inline-preview .article-preview {
+  box-shadow: none;
+}
+.ankyu-writing-view {
+  padding-bottom: 24px;
+}
+.ankyu-inline-preview {
+  margin: 0 42px;
+  border-top: 1px solid var(--editor-line);
+  padding-top: 16px;
+}
+.inline-preview-label {
+  margin-bottom: 10px;
+  color: #7d897d;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.ankyu-inline-preview .article-preview {
+  box-shadow: none;
 }
 .article-preview {
   max-width: 840px;

@@ -507,6 +507,105 @@ input::placeholder {
   overflow: hidden;
 }
 
+/* Application-wide Ankyu surface: the editor's calm paper, green accent, and
+   airy card language is shared by the main window, quick notes, and tiles. */
+.ankyu-app-shell,
+.ankyu-surface-wrapper {
+  --ankyu-green: #6ea63c;
+  --ankyu-green-soft: #edf5e7;
+  --ankyu-line: rgb(47 57 45 / 16%);
+  background: linear-gradient(135deg, #d6eaee 0%, #f0f6e7 52%, #d9e6d0 100%);
+}
+.ankyu-app-surface,
+.ankyu-pad-surface {
+  background:
+    radial-gradient(circle at 50% 14%, rgb(255 255 255 / 85%), transparent 50%),
+    linear-gradient(135deg, #d6eaee 0%, #f0f6e7 52%, #d9e6d0 100%);
+}
+.ankyu-app-navbar {
+  height: 58px !important;
+  border-bottom-color: rgb(40 75 51 / 12%) !important;
+  background: rgb(255 255 255 / 86%) !important;
+  box-shadow: 0 4px 18px rgb(46 81 56 / 7%);
+}
+.ankyu-app-navbar > div:first-child span:first-child {
+  color: #557f2e;
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 750;
+}
+.ankyu-app-sidebar {
+  border-right-color: rgb(83 112 86 / 18%) !important;
+  background: rgb(255 255 255 / 54%) !important;
+  backdrop-filter: blur(8px);
+}
+.ankyu-app-sidebar input,
+.ankyu-app-content input,
+.ankyu-app-content textarea {
+  border-color: var(--ankyu-line);
+}
+.ankyu-app-sidebar button:hover,
+.ankyu-app-toolbar button:hover {
+  background: var(--ankyu-green-soft) !important;
+  color: var(--ankyu-green) !important;
+}
+.ankyu-app-content {
+  background: rgb(255 255 255 / 40%);
+}
+.ankyu-app-toolbar {
+  height: 48px !important;
+  border-bottom-color: var(--ankyu-line) !important;
+  background: rgb(255 255 255 / 55%) !important;
+}
+.ankyu-app-note-header {
+  margin: 14px 18px 0;
+  border: 1px solid var(--ankyu-line) !important;
+  border-radius: 14px;
+  padding: 18px 22px 14px !important;
+  background: rgb(255 255 255 / 72%);
+  box-shadow: 0 4px 15px rgb(42 73 47 / 5%);
+}
+.ankyu-app-note-header input {
+  color: #303631;
+  font-size: 22px;
+}
+.ankyu-app-editor-surface {
+  margin: 14px 18px 18px;
+  border: 1px solid var(--ankyu-line);
+  border-radius: 14px;
+  background: rgb(255 255 255 / 72%);
+  box-shadow: 0 10px 28px rgb(49 84 58 / 8%);
+  overflow: hidden;
+}
+.ankyu-pad-surface {
+  border-color: rgb(83 112 86 / 22%) !important;
+  box-shadow: 0 10px 28px rgb(49 84 58 / 10%) !important;
+}
+.ankyu-pad-surface textarea,
+.ankyu-pad-surface input {
+  color: #303631;
+}
+.ankyu-settings-panel {
+  border-left-color: rgb(83 112 86 / 18%) !important;
+  background:
+    radial-gradient(circle at 50% 0%, rgb(255 255 255 / 92%), transparent 46%),
+    rgb(239 246 233 / 92%) !important;
+  box-shadow: -10px 0 28px rgb(49 84 58 / 7%);
+}
+.ankyu-settings-panel > div:first-child {
+  height: 58px;
+  border-bottom-color: rgb(83 112 86 / 18%) !important;
+}
+.ankyu-settings-panel section {
+  border-color: rgb(83 112 86 / 15%);
+}
+@media (max-width: 720px) {
+  .ankyu-app-note-header,
+  .ankyu-app-editor-surface {
+    margin-inline: 10px;
+  }
+}
+
 /* Delete confirm inline pop */
 @keyframes delete-confirm-enter {
   from {
