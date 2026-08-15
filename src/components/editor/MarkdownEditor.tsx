@@ -8,6 +8,7 @@ import {
   type EditorLayoutMode,
   type EditorPreviewMode,
   type EditorSettings,
+  type EditorSettingsPatch,
 } from "../Ankyu/editor-settings";
 import { ArticlePreview } from "./ArticlePreview";
 import { BlockMarkdownEditor } from "./BlockMarkdownEditor";
@@ -239,11 +240,13 @@ export function MarkdownEditor({
   const onHighlight = (color: string | null) => {
     if (color) onWrap(`<mark style="background:${color}">`, "</mark>");
   };
-  const updateEditorSettings = (patch: Partial<EditorSettings>) => {
+  const updateEditorSettings = (patch: EditorSettingsPatch) => {
+    const nextComponents: Record<ComponentId, boolean> = { ...editorSettings.components };
+    Object.assign(nextComponents, patch.components);
     const next: EditorSettings = {
       ...editorSettings,
       ...patch,
-      components: { ...editorSettings.components, ...patch.components },
+      components: nextComponents,
     };
     setEditorSettings(next);
     saveEditorSettings(next);

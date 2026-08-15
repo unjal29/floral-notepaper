@@ -15,6 +15,9 @@ export interface EditorSettings {
   previewMode: EditorPreviewMode;
   components: Record<EditorComponentId, boolean>;
 }
+export type EditorSettingsPatch = Omit<Partial<EditorSettings>, "components"> & {
+  components?: Partial<Record<EditorComponentId, boolean>>;
+};
 
 export const EDITOR_SETTINGS_EVENT = "floral-editor-settings-changed";
 export const DEFAULT_EDITOR_SETTINGS: EditorSettings = {

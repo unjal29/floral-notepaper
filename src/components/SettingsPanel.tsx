@@ -29,6 +29,7 @@ import {
   type EditorLayoutMode,
   type EditorPreviewMode,
   type EditorSettings,
+  type EditorSettingsPatch,
   type EditorVariant,
 } from "./Ankyu/editor-settings";
 
@@ -55,11 +56,13 @@ export function SettingsPanel({ config, onChange, onMigrateDataDir, onClose }: S
     window.addEventListener(EDITOR_SETTINGS_EVENT, onEditorSettingsChange);
     return () => window.removeEventListener(EDITOR_SETTINGS_EVENT, onEditorSettingsChange);
   }, []);
-  const updateEditorSettings = (patch: Partial<EditorSettings>) => {
+  const updateEditorSettings = (patch: EditorSettingsPatch) => {
+    const nextComponents: Record<EditorComponentId, boolean> = { ...editorSettings.components };
+    Object.assign(nextComponents, patch.components);
     const next: EditorSettings = {
       ...editorSettings,
       ...patch,
-      components: { ...editorSettings.components, ...patch.components },
+      components: nextComponents,
     };
     setEditorSettings(next);
     saveEditorSettings(next);

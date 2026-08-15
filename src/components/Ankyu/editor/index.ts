@@ -10,6 +10,7 @@ export type {
   EditorVariant,
   EditorLayoutMode,
   EditorPreviewMode,
+  EditorSettingsPatch,
   EditorSettings,
 } from "../editor-settings";
 export { ArticlePreview } from "../../editor/ArticlePreview";
