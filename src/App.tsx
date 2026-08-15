@@ -12,6 +12,7 @@ import type { AppConfig, ThemeOption } from "./features/settings/types";
 import { getInitialRoute } from "./features/windows/windowRoutes";
 import { syncLanguage } from "./locales";
 import { listen } from "@tauri-apps/api/event";
+import { MarkdownEditor } from "./components/editor/MarkdownEditor";
 
 function App() {
   const route = getInitialRoute();
@@ -85,6 +86,8 @@ function App() {
           <MainWindow />
         ) : activeView === "notepad" ? (
           <NotePad initialNoteId={route.noteId} />
+        ) : activeView === "editor" ? (
+          <MarkdownEditor />
         ) : (
           <TileShowcase noteId={route.noteId} />
         )}

@@ -1,4 +1,4 @@
-export type AppView = "main" | "notepad" | "tile";
+export type AppView = "main" | "notepad" | "tile" | "editor";
 
 export interface AppRoute {
   view: AppView;
@@ -6,6 +6,7 @@ export interface AppRoute {
 }
 
 export function getInitialRoute(url: URL = new URL(window.location.href)): AppRoute {
+  if (/\/Editor\/?$/i.test(url.pathname)) return { view: "editor" };
   return routeFromSearch(url.search);
 }
 
@@ -16,6 +17,7 @@ export function routeFromSearch(search: string): AppRoute {
 
   if (view === "notepad") return noteId ? { view, noteId } : { view };
   if (view === "tile") return noteId ? { view, noteId } : { view };
+  if (view === "editor") return { view };
   return { view: "main" };
 }
 
@@ -25,6 +27,10 @@ export function buildNotepadUrl(noteId?: string): string {
 
 export function buildTileUrl(noteId: string): string {
   return buildUrl("tile", noteId);
+}
+
+export function buildEditorUrl(): string {
+  return buildUrl("editor");
 }
 
 function buildUrl(view: AppView, noteId?: string): string {

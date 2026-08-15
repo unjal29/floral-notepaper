@@ -1,0 +1,80 @@
+name: Build Windows x64 portable EXE
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_ref:
+        description: "Branch, tag, or commit to build"
+        required: true
+        default: "main"
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: windows-portable-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Windows x64 single-file executable
+    runs-on: windows-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ inputs.source_ref }}
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: "24"
+          cache: npm
+
+      - name: Setup Rust (MSVC x64)
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+
+      - name: Install frontend dependencies
+        shell: pwsh
+        run: npm.cmd ci
+
+      - name: Build portable executable only
+        shell: pwsh
+        env:
+          CARGO_BUILD_TARGET: x86_64-pc-windows-msvc
+        run: npm.cmd run tauri -- build --target x86_64-pc-windows-msvc --no-bundle
+
+      - name: Collect single-file EXE
+        id: collect
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $targetRoot = Join-Path $PWD 'src-tauri/target/x86_64-pc-windows-msvc/release'
+          $source = Join-Path $targetRoot 'floral-notepaper.exe'
+          if (-not (Test-Path -LiteralPath $source)) {
+            throw "Portable executable was not found at $source"
+          }
+
+          $version = (Get-Content -Raw -LiteralPath 'src-tauri/tauri.conf.json' | ConvertFrom-Json).version
+          if ([string]::IsNullOrWhiteSpace($version)) { throw 'Unable to read application version.' }
+
+          $outputDir = Join-Path $PWD 'release-assets'
+          New-Item -ItemType Directory -Path $outputDir -Force | Out-Null
+          $output = Join-Path $outputDir "floral-notepaper_${version}_x64.exe"
+          Copy-Item -LiteralPath $source -Destination $output -Force
+
+          $hash = (Get-FileHash -LiteralPath $output -Algorithm SHA256).Hash.ToLowerInvariant()
+          "$hash  $([IO.Path]::GetFileName($output))" | Set-Content -LiteralPath (Join-Path $outputDir 'SHA256SUMS.txt')
+          "version=$version" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+
+      - name: Upload portable artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: floral-notepaper-windows-x64-portable-${{ steps.collect.outputs.version }}
+          path: release-assets/*
+          if-no-files-found: error
+          retention-days: 14
